@@ -1,0 +1,6 @@
+/* Versioned scoped offline caching for GitHub Pages and the Volume I HTML reader. */
+const CACHE_NAME='dip-pros-sba-ed2-v3';
+const OFFLINE_FILES=['./','./index.html','./notes.html','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notes-pages/001.webp','./assets/notes-pages/002.webp','./assets/notes-pages/003.webp','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(OFFLINE_FILES)).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('dip-pros-')&&!['dip-pros-notes-v3',CACHE_NAME].includes(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(response=>{if(response.ok){const cloned=response.clone();caches.open(CACHE_NAME).then(c=>c.put(req,cloned));}return response;}).catch(()=>{if(req.mode==='navigate')return caches.match('./index.html');return Response.error();})));});
