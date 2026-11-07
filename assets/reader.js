@@ -11,7 +11,8 @@
   if(!Array.isArray(saved))saved=[];
   saved=saved.map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=pageTotal);
   const rawPage=new URLSearchParams(location.search).get('page');
-  let current=Number(rawPage)||Number(localStorage.getItem(storagePrefix+'last'))||1;
+  let lastSaved=1;try{lastSaved=Number(localStorage.getItem(storagePrefix+'last'))||1;}catch(e){}
+  let current=Number(rawPage)||lastSaved;
   current=Math.max(1,Math.min(pageTotal,current));
   let zoom=1;
   function pageURL(n){return 'assets/notes-pages/'+String(n).padStart(3,'0')+'.webp';}
@@ -20,7 +21,7 @@
   const detailedName=(page)=>{let name='';for(const entry of toc){if(entry.page>page)break;name=entry.title;}return name;};
   function setSize(){const full=Math.max(240,viewport.clientWidth-26);const base=Math.min(860,full);wrapper.style.width=(base*zoom)+'px';el('zoom-value').textContent=Math.round(zoom*100)+'%';}
   function updateSaved(){
-    saved=[...new Set(saved)].sort((a,b)=>a-b);localStorage.setItem(storagePrefix+'bookmarks',JSON.stringify(saved));
+    saved=[...new Set(saved)].sort((a,b)=>a-b);try{localStorage.setItem(storagePrefix+'bookmarks',JSON.stringify(saved));}catch(e){}
     el('bookmark-btn').textContent=saved.includes(current)?'★ Saved page':'☆ Save page';
     el('saved-pages').innerHTML=saved.length?saved.map(n=>`<button class="saved-page" type="button" data-saved-page="${n}">Page ${n}</button>`).join(''):'<span>No pages saved yet. Use “Save page” above.</span>';
   }
@@ -31,7 +32,7 @@
     for(const id of ['prev-btn','prev-bottom'])el(id).disabled=current===1;
     for(const id of ['next-btn','next-bottom'])el(id).disabled=current===pageTotal;
     updateSaved();setSize();viewport.scrollTo({left:0,top:0});
-    localStorage.setItem(storagePrefix+'last',String(current));
+    try{localStorage.setItem(storagePrefix+'last',String(current));}catch(e){}
     try{history.replaceState(null,'','?page='+current);}catch(e){}
     for(const ahead of [1,-1,2]){const n=current+ahead;if(n>=1&&n<=pageTotal){const preload=new Image();preload.src=pageURL(n);}}
   }
