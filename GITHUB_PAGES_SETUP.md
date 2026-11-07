@@ -9,7 +9,13 @@
 7. In Safari on iPhone or iPad, open that URL. Tap the **Share** icon → **Add to Home Screen**.
 8. Open the Home Screen shortcut and choose **Read Volume I** to read the final 72-page notebook in HTML, or choose **Practice** for the 1,000-question bank. Once initial offline files have cached, questions can work without internet.
 
-### Important details
+### Updating an existing GitHub Pages repository
+
+Extract the new ZIP and replace the repository's existing website files with the **contents** of the ZIP, keeping the same root-level folder structure. In particular, update `index.html`, `assets/app.js`, `assets/style.css`, `assets/reader.js`, `notes.html` and `sw.js`. Do not upload the ZIP itself and expect Pages to extract it. All notebook page images must remain under `assets/notes-pages/`.
+
+The storage key for answered questions has been preserved, so updating website files should not reset your browser's saved progress. **Export a progress backup before updating**. After the GitHub Pages deployment completes, refresh Safari; old offline caches can delay updates until the new service worker activates.
+
+## Important details
 
 - Make sure GitHub is serving `index.html` from the root, not from a nested top-level folder.
 - Avoid renaming the `assets` folder, `sw.js`, or the manifests. Internal URLs are relative, so the project works under a repository subpath.

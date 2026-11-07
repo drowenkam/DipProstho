@@ -44,6 +44,18 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000/`. Offline support and Home Screen installation require a HTTPS origin (GitHub Pages provides this) or localhost.
 
+## Debugged edition · scoring and navigation
+
+- **No changes to the question text or answer keys:** all 1,000 source answers and all 5,000 option texts match the supplied Edition 2 Word document.
+- **Study progress:** "Attempted" means unique questions for which an answer was checked in practice mode or submitted in timed mode; merely visiting or selecting without checking does not count. "Latest accuracy" is latest correct answers divided by unique attempted questions. Repeated attempts on the same question update its latest result and attempt count without inflating coverage.
+- **Session results:** percentage is correct divided by every question in the session (unanswered = zero marks). The separate answered-only accuracy is also shown. Timed answers are marked only when the session finishes or the timer expires.
+- **Recovery:** unfinished sessions and completed results survive page reloads; using search during a longer session saves a paused copy that can be resumed. Completed scores appear in the history and remain distinct from the current latest-answer accuracy.
+- **Progress transfer:** exported JSON merges answers by most recent attempt, unions bookmarks, and deduplicates imported session history.
+- **Navigation:** last-page controls are disabled appropriately, but readers can return to any unit or back to the SBA bank. The 50 integrated Block N cases link to the unit named in their source revision pointer rather than to the title page.
+- The original revision notebook PDF includes some **legacy question-range references** from another edition. Those printed ranges are not the indexing for this 1,000-question Edition 2 website.
+
+See `VALIDATION_REPORT.md` and `TEST_RESULTS.txt` for exact data and interaction checks. These tests do not constitute clinical peer review. Browser-rendered workflows were exercised in Chromium; direct GitHub Pages deployment and iOS Safari testing were not available in this environment.
+
 ## Progress and privacy
 
 Answered questions, scores and bookmarks live in **browser local storage on that device**. GitHub does not receive your answers. Use **My progress → Export progress** on one device and **Import progress** on the other to transfer progress; it does not automatically sync across devices. Private browsing or clearing website data can erase progress. Export regularly.

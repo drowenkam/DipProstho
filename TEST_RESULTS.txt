@@ -1,0 +1,45 @@
+Chromium DOM interaction tests (browser navigation restricted by environment)
+PASS dashboard renders
+PASS all 14 blocks shown
+PASS Volume I reader link exists
+PASS mobile dashboard no horizontal overflow
+PASS sequential block A starts Q1
+PASS visited question not counted as answered
+PASS correct option scored on check
+PASS checked counter increments correctly
+PASS wrong selection shows correct source answer
+PASS 2 of 10 checked progress
+PASS progress bar based on checked count not visited position
+PASS practice score counts unanswered as incorrect
+PASS unanswered tally accurate
+PASS answered-only accuracy shown separately
+PASS completed results persisted after finish
+PASS incorrect answer saved accurately
+PASS completed result restored after refresh
+PASS review button available after reload
+PASS completed exam review renders
+PASS review next navigation works
+PASS new session returns dashboard
+PASS wrong-answer filter selects exactly the wrong question
+PASS unseen filter excludes two answered questions
+PASS timed score exact 1/10
+PASS timed unanswered count exact
+PASS block A attempted count deduplicates repeated answers
+PASS block A latest correct / attempted accurately presented
+PASS history tracks actual topic and session mode
+PASS search can open a specific bank question
+PASS original unfinished session safely paused
+PASS paused session resumes original question
+PASS unsubmitted selection preserved when pausing
+PASS import does not duplicate existing session history
+PASS invalid progress import reports failure
+PASS reset clears progress
+PASS reader loads page 1
+PASS reader jumps to final page
+PASS final page has disabled next not broken link
+PASS reader previous-page navigation works
+PASS page bookmark saved
+PASS invalid reader page number rejected
+PASS reader returns to bank: no dead end
+PASS reader mobile no horizontal body overflow
+
