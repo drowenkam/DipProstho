@@ -1,7 +1,7 @@
 /* Scoped, versioned offline support for the question bank and final notebook reader. */
-const CACHE_NAME = 'dip-pros-sba-pdf-pair-v12-20261109';
-const OFFLINE_FILES = ['./','./index.html','./notes.html','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notes-pages/001.webp','./assets/notes-pages/002.webp','./assets/notes-pages/003.webp','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
-const keepCaches = [CACHE_NAME, 'dip-pros-notes-v3'];
+const CACHE_NAME = 'dip-pros-compact-ed2-v15-20261109';
+const OFFLINE_FILES = ['./','./index.html','./notes.html','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notebook-pages-index.json','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const keepCaches = [CACHE_NAME, 'dip-pros-notes-v4', 'dip-pros-notes-v5'];
 async function cacheResponse(request,response) {
   if(response.ok) {try {const cache=await caches.open(CACHE_NAME);await cache.put(request,response.clone());}catch(err) {/* Storage may be full or restricted. Online reading still works. */}}
   return response;

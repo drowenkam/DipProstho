@@ -6,6 +6,19 @@
   const pageEl=el('page-image'), viewport=el('reader-viewport'), wrapper=el('image-container');
   const chapter=el('chapter-name'), caption=el('page-caption'), pageInput=el('page-input');
   const storagePrefix='dip-pros-final-notes-v1-';
+  // One-off migration from the original 72-page reader to Edition 2 (105 pages).
+  const oldPageToNew=[1,2,4,5,6,7,8,9,11,12,13,14,19,20,21,22,23,24,25,26,32,33,34,35,36,38,39,40,41,42,43,48,49,50,51,52,57,58,59,60,61,65,66,67,68,69,70,71,74,75,76,77,79,80,81,82,83,86,87,88,89,92,93,94,95,97,98,99,100,102,103,104];
+  try{
+    const marker=storagePrefix+'edition2-map-done';
+    if(localStorage.getItem(marker)!=='1'){
+      const translate=n=>Number.isInteger(n)&&n>=1&&n<=72?oldPageToNew[n-1]:n;
+      const prev=JSON.parse(localStorage.getItem(storagePrefix+'bookmarks')||'[]');
+      if(Array.isArray(prev)) localStorage.setItem(storagePrefix+'bookmarks',JSON.stringify([...new Set(prev.map(v=>translate(Number(v))).filter(v=>v>=1&&v<=105))]));
+      const oldLast=Number(localStorage.getItem(storagePrefix+'last'));
+      if(Number.isInteger(oldLast)&&oldLast>=1&&oldLast<=72)localStorage.setItem(storagePrefix+'last',String(translate(oldLast)));
+      localStorage.setItem(marker,'1');
+    }
+  }catch(e){ /* Reader is usable even if storage is unavailable. */ }
   let saved=[];
   try{saved=JSON.parse(localStorage.getItem(storagePrefix+'bookmarks'))||[];}catch(e){}
   if(!Array.isArray(saved))saved=[];
@@ -15,7 +28,40 @@
   let current=Number(rawPage)||lastSaved;
   current=Math.max(1,Math.min(pageTotal,current));
   let zoom=1;
-  function pageURL(n){return 'assets/notes-pages/'+String(n).padStart(3,'0')+'.webp';}
+  // A single packed file replaces 105 separate webp files (GitHub browser upload friendly).
+  let packedIndex=null, packedBytes=null;
+  const pageBlobs=new Map();
+  function pageURL(n){
+    if(!packedIndex || !packedBytes)return '';
+    if(pageBlobs.has(n))return pageBlobs.get(n);
+    const entry=packedIndex.offsets[n-1];
+    if(!entry)return '';
+    const chunk=new Uint8Array(packedBytes,entry[0],entry[1]);
+    const objectURL=URL.createObjectURL(new Blob([chunk],{type:'image/webp'}));
+    pageBlobs.set(n,objectURL);
+    return objectURL;
+  }
+  async function loadPackedPages(){
+    const status=el('offline-status');
+    try{
+      const [metaResponse,packResponse]=await Promise.all([
+        fetch('assets/notebook-pages-index.json'),
+        fetch('assets/notebook-pages.pack')
+      ]);
+      if(!metaResponse.ok || !packResponse.ok)throw new Error('Notebook page file unavailable');
+      const meta=await metaResponse.json();
+      const bytes=await packResponse.arrayBuffer();
+      if(meta.pages!==pageTotal || meta.offsets.length!==pageTotal)throw new Error('Invalid notebook page index');
+      const last=meta.offsets[pageTotal-1];
+      if(last[0]+last[1]!==bytes.byteLength)throw new Error('Notebook page bundle is incomplete');
+      packedIndex=meta;packedBytes=bytes;
+      update();
+      status.textContent='Notebook loaded · all 105 pages available.';
+    }catch(err){
+      status.textContent='Unable to load the notebook. Please refresh, confirm the two notebook-pages files were uploaded together, or read the separate PDF.';
+      pageEl.alt='Notebook page data could not load.';
+    }
+  }
   const htmlEscape=(s)=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const sectionName=(page)=>{let name='Introduction';for(const entry of toc){if(entry.page>page)break;if(entry.level===1)name=entry.title;}return name;};
   const detailedName=(page)=>{let name='';for(const entry of toc){if(entry.page>page)break;name=entry.title;}return name;};
@@ -65,8 +111,8 @@
     btn.disabled=true;status.textContent='Saving pages…';
     let completed=0,failed=0;
     try{
-      const cache=await caches.open('dip-pros-notes-v3');
-      const files=['notes.html','assets/reader.css','assets/reader.js','assets/notes-volume-i.pdf', ...Array.from({length:pageTotal},(_,i)=>pageURL(i+1))];
+      const cache=await caches.open('dip-pros-notes-v4');
+      const files=['index.html','notes.html','assets/reader.css','assets/reader.js','assets/style.css','assets/app.js','assets/questions.json','assets/notebook-pages-index.json','assets/notebook-pages.pack'];
       for(let i=0;i<files.length;i+=3){
         await Promise.all(files.slice(i,i+3).map(async rel=>{
           try{const url=new URL(rel,location.href);const res=await fetch(url,{cache:'reload'});if(!res.ok)throw Error('HTTP '+res.status);await cache.put(url,res.clone());completed++;}
@@ -74,10 +120,10 @@
         }));
         status.textContent=`Saved ${completed} of ${files.length} resources${failed?' · '+failed+' failed':''}`;
       }
-      status.textContent=failed===0?'All 72 pages and the PDF were saved in this device’s browser cache. Offline availability still depends on Safari storage retention.':`Saved ${completed} resources; ${failed} failed. Reconnect and retry, or save the PDF to Files.`;
+      status.textContent=failed===0?`All ${pageTotal} notebook pages and the question bank were saved to this device's browser cache. Offline availability still depends on Safari storage retention.`:`Saved ${completed} resources; ${failed} failed. Reconnect and retry, or save the PDF to Files.`;
     }catch(err){status.textContent='Could not complete offline saving. Please use the PDF download for reliable offline access.';}
     btn.disabled=false;
   });
-  update();
+  loadPackedPages();
   if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
 })();
