@@ -2,6 +2,8 @@
   'use strict';
   const meta = JSON.parse(document.getElementById('reader-data').textContent);
   const pageTotal=meta.pageCount, toc=meta.toc;
+  const chapterData=JSON.parse(document.getElementById('chapter-map-data').textContent);
+  const chapters=chapterData.chapters;
   const el=(id)=>document.getElementById(id);
   const pageEl=el('page-image'), viewport=el('reader-viewport'), wrapper=el('image-container');
   const chapter=el('chapter-name'), caption=el('page-caption'), pageInput=el('page-input');
@@ -28,7 +30,7 @@
   let current=Number(rawPage)||lastSaved;
   current=Math.max(1,Math.min(pageTotal,current));
   let zoom=1;
-  // A single packed file replaces 105 separate webp files (GitHub browser upload friendly).
+  // A single packed file replaces separate webp files (GitHub browser upload friendly).
   let packedIndex=null, packedBytes=null;
   const pageBlobs=new Map();
   function pageURL(n){
@@ -56,13 +58,44 @@
       if(last[0]+last[1]!==bytes.byteLength)throw new Error('Notebook page bundle is incomplete');
       packedIndex=meta;packedBytes=bytes;
       update();
-      status.textContent='Notebook loaded · all 105 pages available.';
+      status.textContent='Notebook loaded · all '+pageTotal+' pages available.';
     }catch(err){
       status.textContent='Unable to load the notebook. Please refresh, confirm the two notebook-pages files were uploaded together, or read the separate PDF.';
       pageEl.alt='Notebook page data could not load.';
     }
   }
   const htmlEscape=(s)=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const questionLink=(id,page)=>'index.html?question='+encodeURIComponent(id)+'&from='+page;
+  const practiceLink=(ids,page)=>'index.html?practice='+encodeURIComponent(ids.join(','))+'&from='+page;
+  function topicHTML(t){
+    const allIds=t.questions||[];
+    return `<div class="chapter-topic"><div class="chapter-topic-title">${htmlEscape(t.title)}</div><div class="chapter-topic-meta">Volume I p. ${t.page} · ${allIds.length} selected matching SBAs</div>
+    <div class="chapter-topic-actions"><a class="chapter-link" href="notes.html?page=${t.page}#notebook">Read these notes →</a>${allIds.length?`<a class="chapter-link primary" href="${practiceLink(allIds,t.page)}">Practise ${allIds.length} SBAs →</a>`:''}</div>
+    <div class="chapter-question-links" aria-label="Specific linked questions">${allIds.map(id=>`<a href="${questionLink(id,t.page)}" title="Open question ${id} in Volume II">Q${id}</a>`).join('')}</div></div>`;
+  }
+  const grid=el('chapter-grid');
+  grid.innerHTML=chapters.map(c=>`<details class="chapter-card" id="chapter-${c.unit}"><summary><span class="chapter-number">${String(c.unit).padStart(2,'0')}</span><span>${htmlEscape(c.title)}</span></summary><div class="chapter-card-content"><div class="chapter-card-actions"><a class="chapter-link primary" href="notes.html?page=${c.page}#notebook">Read Chapter ${c.unit} →</a><a class="chapter-link" href="notes.html?page=${106+c.unit}#notebook">Chapter study map (PDF p. ${106+c.unit}) →</a><a class="chapter-link" href="index.html?chapter=${c.unit}&from=${c.page}">All ${c.allQuestionCount} chapter SBAs →</a></div>${c.topics.map(topicHTML).join('')}</div></details>`).join('');
+  const chapterSelect=el('chapter-select');
+  chapterSelect.innerHTML='<option value="0">Choose chapter…</option>'+chapters.map(c=>`<option value="${c.unit}">${String(c.unit).padStart(2,'0')} · ${htmlEscape(c.title)}</option>`).join('');
+  chapterSelect.addEventListener('change',()=>{const c=chapters.find(x=>x.unit===Number(chapterSelect.value));if(c)goto(c.page);});
+  function currentChapter(){if(current>=107&&current<=120)return chapters[current-107];if(current===106)return chapters[0];let c=null;for(const ch of chapters){if(ch.page<=current)c=ch;else break;}return c||chapters[0];}
+  function renderChapterPanel(){
+    const c=currentChapter();
+    chapterSelect.value=String(c.unit);
+    el('chapter-previous').disabled=c.unit===1;
+    el('chapter-next').disabled=c.unit===chapters.length;
+    const panel=el('chapter-study-panel');
+    const related=c.topics.filter((t,i)=>t.page<=current || i===0);
+    const focused=(related.length?related.at(-1):c.topics[0]);
+    panel.innerHTML=`<h3>Chapter ${c.unit}: ${htmlEscape(c.title)}</h3><p>Currently showing p. ${current}. Use these links to go directly from these notes to their selected Volume II SBA questions.</p>
+      ${focused?topicHTML(focused):''}<a class="chapter-link primary" href="index.html?chapter=${c.unit}&from=${c.page}">Practice all ${c.allQuestionCount} chapter SBAs →</a><a class="chapter-link" href="notes.html?page=${106+c.unit}#notebook">Full chapter study map (p. ${106+c.unit}) →</a>
+      <a class="chapter-link" href="#chapter-${c.unit}" data-expand-chapter="${c.unit}">See all topics in this chapter ↑</a>`;
+  }
+  el('chapter-previous').addEventListener('click',()=>{const c=currentChapter();const target=chapters[c.unit-2];if(target)goto(target.page);});
+  el('chapter-next').addEventListener('click',()=>{const c=currentChapter();const target=chapters[c.unit];if(target)goto(target.page);});
+  el('chapter-study-panel').addEventListener('click',ev=>{const a=ev.target.closest('[data-expand-chapter]');if(a){const d=el('chapter-'+a.dataset.expandChapter);if(d)d.open=true;}});
+
   const sectionName=(page)=>{let name='Introduction';for(const entry of toc){if(entry.page>page)break;if(entry.level===1)name=entry.title;}return name;};
   const detailedName=(page)=>{let name='';for(const entry of toc){if(entry.page>page)break;name=entry.title;}return name;};
   function setSize(){const full=Math.max(240,viewport.clientWidth-26);const base=Math.min(860,full);wrapper.style.width=(base*zoom)+'px';el('zoom-value').textContent=Math.round(zoom*100)+'%';}
@@ -77,7 +110,7 @@
     caption.textContent=`Page ${current} of ${pageTotal} · ${detailedName(current)}`;
     for(const id of ['prev-btn','prev-bottom'])el(id).disabled=current===1;
     for(const id of ['next-btn','next-bottom'])el(id).disabled=current===pageTotal;
-    updateSaved();setSize();viewport.scrollTo({left:0,top:0});
+    updateSaved();renderChapterPanel();setSize();viewport.scrollTo({left:0,top:0});
     try{localStorage.setItem(storagePrefix+'last',String(current));}catch(e){}
     try{history.replaceState(null,'','?page='+current);}catch(e){}
     for(const ahead of [1,-1,2]){const n=current+ahead;if(n>=1&&n<=pageTotal){const preload=new Image();preload.src=pageURL(n);}}

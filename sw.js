@@ -1,7 +1,7 @@
 /* Scoped, versioned offline support for the question bank and final notebook reader. */
-const CACHE_NAME = 'dip-pros-compact-ed2-v15-20261109';
-const OFFLINE_FILES = ['./','./index.html','./notes.html','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notebook-pages-index.json','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
-const keepCaches = [CACHE_NAME, 'dip-pros-notes-v4', 'dip-pros-notes-v5'];
+const CACHE_NAME = 'dip-pros-chapter-linked-v16-20261109';
+const OFFLINE_FILES = ['./','./index.html','./notes.html','./assets/chapter-map.json','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notebook-pages-index.json','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const keepCaches = [CACHE_NAME];
 async function cacheResponse(request,response) {
   if(response.ok) {try {const cache=await caches.open(CACHE_NAME);await cache.put(request,response.clone());}catch(err) {/* Storage may be full or restricted. Online reading still works. */}}
   return response;
@@ -16,7 +16,7 @@ self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET'||new URL(request.url).origin!==self.location.origin)return;
   const uri=new URL(request.url);
-  const networkFirst=request.mode==='navigate'||/\/(?:app|reader)\.js$/.test(uri.pathname);
+  const networkFirst=request.mode==='navigate'||/\/(?:app|reader)\.js$/.test(uri.pathname)||/\/(?:notebook-pages\.(?:pack)|notebook-pages-index\.json|chapter-map\.json)$/.test(uri.pathname);
   event.respondWith((async()=>{
     if(networkFirst){
       try{return await cacheResponse(request,await fetch(request));}
