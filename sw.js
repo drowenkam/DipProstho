@@ -1,5 +1,5 @@
 /* Scoped, versioned offline support for the question bank and final notebook reader. */
-const CACHE_NAME = 'dip-pros-sba-ed2-v5';
+const CACHE_NAME = 'dip-pros-sba-pdf-pair-v12-20261109';
 const OFFLINE_FILES = ['./','./index.html','./notes.html','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notes-pages/001.webp','./assets/notes-pages/002.webp','./assets/notes-pages/003.webp','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
 const keepCaches = [CACHE_NAME, 'dip-pros-notes-v3'];
 async function cacheResponse(request,response) {

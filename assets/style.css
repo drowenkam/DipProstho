@@ -11,3 +11,11 @@
 /* Small-screen fix: long course titles in native selects must not widen the page. */
 .field{min-width:0}
 .field select,.field input{min-width:0;max-width:100%}
+
+/* Advanced/legacy pool selector */
+.pool-picker{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0 21px}.pool-picker .segment{flex:1 1 220px;text-align:center}.question-title{white-space:pre-line}.pool-picker .selected{border-color:#006f64;background:#e7f4f0;color:#073a36}
+@media(max-width:620px){
+ .tabs{overflow:visible;white-space:normal;flex-wrap:wrap;gap:4px}
+ .tabs .tab{flex:1 1 30%;min-width:96px;justify-content:center;text-align:center}
+ .pool-picker .segment{flex-basis:100%}
+}
