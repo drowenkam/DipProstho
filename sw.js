@@ -1,6 +1,6 @@
 /* Scoped, versioned offline support for the question bank and final notebook reader. */
-const CACHE_NAME = 'dip-pros-chapter-linked-v16-20261109';
-const OFFLINE_FILES = ['./','./index.html','./notes.html','./assets/chapter-map.json','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notebook-pages-index.json','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const CACHE_NAME = 'dip-pros-navigation-repair-v17-20261109';
+const OFFLINE_FILES = ['./','./index.html','./notes.html','./pdf.html','./assets/chapter-map.json','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notebook-pages-index.json','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png','./assets/sba-questions.pdf','./assets/sba-answers.pdf'];
 const keepCaches = [CACHE_NAME];
 async function cacheResponse(request,response) {
   if(response.ok) {try {const cache=await caches.open(CACHE_NAME);await cache.put(request,response.clone());}catch(err) {/* Storage may be full or restricted. Online reading still works. */}}

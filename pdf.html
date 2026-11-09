@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#123e3b"><title>PDF Library | Diploma in Prosthodontics</title><link rel="stylesheet" href="assets/style.css"><link rel="manifest" href="manifest.webmanifest"><style>
+.pdf-nav{position:sticky;top:0;z-index:120;display:flex;gap:6px;padding:9px max(12px,calc((100vw - 1000px)/2));background:#123e3b;box-shadow:0 2px 9px #0003}
+.pdf-nav a{color:#fff;border:1px solid #85afa6;border-radius:8px;text-decoration:none;padding:10px 13px;font-size:13px;font-weight:750;flex:1;text-align:center}
+.pdf-nav a:first-child{color:#123e3b;background:#e5f4ed}
+.pdf-container{max-width:930px;margin:0 auto;padding:25px 16px 70px}.pdf-container h1{font:normal 34px Georgia,serif;margin:8px 0}.pdf-container p{line-height:1.65}.pdf-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
+.pdf-option{border:1px solid #d6e3de;background:#fff;border-radius:12px;padding:20px}.pdf-option h2{font-size:20px;margin:0 0 7px}.pdf-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0}.pdf-actions a{border:1px solid #216657;border-radius:8px;padding:11px 14px;text-decoration:none;color:#174e42;font-weight:750;font-size:13px;min-height:44px}.pdf-actions a:first-child{background:#174e42;color:#fff}
+.pdf-help{padding:17px;background:#edf6f1;border-radius:10px;font-size:14px}.pdf-option a:focus-visible{outline:3px solid #eda947}
+@media(max-width:650px){.pdf-options{grid-template-columns:1fr}.pdf-nav{padding:8px 6px}.pdf-nav a{font-size:11px;padding:10px 5px}.pdf-container h1{font-size:30px}}
+</style></head><body>
+<nav class="pdf-nav" aria-label="Always visible PDF navigation"><a href="index.html">← SBA dashboard</a><a href="notes.html#chapters">☰ Chapters</a><a href="notes.html#notebook">▤ Keypoints</a></nav>
+<main class="pdf-container"><p class="eyebrow">Diploma in Prosthodontics · Study resources</p><h1>PDF Library</h1>
+<p>You can always return using the navigation bar above. <strong>Open PDF</strong> uses a separate browser tab so the study website stays available. On an iPhone or iPad, close the PDF tab to return; for offline access choose <strong>Save PDF</strong> and open it from Files.</p>
+<div class="pdf-options">
+<section class="pdf-option" id="questions"><h2>Volume II · Questions only</h2><p>1,500 SBA questions for practice without the answer key.</p><div class="pdf-actions"><a href="assets/sba-questions.pdf" target="_blank" rel="noopener noreferrer">Open PDF ↗</a><a href="assets/sba-questions.pdf" download="Dip_Pros_1500_Questions.pdf">Save PDF ↓</a></div></section>
+<section class="pdf-option" id="answers"><h2>Volume II · Answers and justifications</h2><p>Matched answer key and accompanying explanations.</p><div class="pdf-actions"><a href="assets/sba-answers.pdf" target="_blank" rel="noopener noreferrer">Open PDF ↗</a><a href="assets/sba-answers.pdf" download="Dip_Pros_1500_Answers.pdf">Save PDF ↓</a></div></section>
+<section class="pdf-option"><h2>Volume I · Updated chapter-linked notes</h2><p>The 120-page Edition 2 notebook is already available as a chapter-based HTML reader, including keypoints and study maps. Its PDF is kept outside the compact GitHub package to avoid upload limits.</p><div class="pdf-actions"><a href="notes.html#chapters">Read chapters →</a><a href="notes.html?page=106#notebook">Open keypoints & study maps →</a></div></section>
+</div>
+<div class="pdf-help"><strong>If a PDF viewer hides the navigation bar:</strong> It opened the document in a separate tab, not inside the website. Close that tab (Safari tab overview) to return, or use the saved PDF in Files. For no new tabs, use the HTML chapter reader.</div>
+<p style="margin-top:25px"><a href="index.html">← Return to the SBA question bank and your saved question</a></p></main>
+<script>if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});</script>
+</body></html>
