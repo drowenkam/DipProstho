@@ -1,7 +1,6 @@
-/* Offline shell: Chapter content is fully embedded in notes.html. */
-const CACHE_NAME='dip-pros-standalone-volume-reader-v19-20261109';
-const files=['./','./index.html','./notes.html','./assets/app.js','./assets/questions.json','./assets/style.css','./pdf.html','./manifest.webmanifest'];
-self.addEventListener('install',e=>e.waitUntil((async()=>{const cache=await caches.open(CACHE_NAME);await Promise.allSettled(files.map(f=>cache.add(f)));await self.skipWaiting();})()));
-self.addEventListener('activate',e=>e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('dip-pros-')&&k!==CACHE_NAME).map(k=>caches.delete(k)));await self.clients.claim();})()));
-self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin!==self.location.origin)return;
-e.respondWith((async()=>{const cache=await caches.open(CACHE_NAME);if(r.mode==='navigate'||u.pathname.endsWith('/app.js')){try{const res=await fetch(r);if(res.ok)await cache.put(r,res.clone());return res;}catch(e){return await cache.match(r,{ignoreSearch:true})||await cache.match('./index.html')||Response.error();}}const old=await cache.match(r,{ignoreSearch:true});if(old)return old;try{const res=await fetch(r);if(res.ok)await cache.put(r,res.clone());return res;}catch(e){return Response.error();}})());});
+/* Versioned scoped offline caching for GitHub Pages and the Volume I HTML reader. */
+const CACHE_NAME='dip-pros-sba-ed2-v3';
+const OFFLINE_FILES=['./','./index.html','./notes.html','./assets/style.css','./assets/app.js','./assets/questions.json','./assets/reader.css','./assets/reader.js','./assets/notes-pages/001.webp','./assets/notes-pages/002.webp','./assets/notes-pages/003.webp','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(OFFLINE_FILES)).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('dip-pros-')&&!['dip-pros-notes-v3',CACHE_NAME].includes(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(response=>{if(response.ok){const cloned=response.clone();caches.open(CACHE_NAME).then(c=>c.put(req,cloned));}return response;}).catch(()=>{if(req.mode==='navigate')return caches.match('./index.html');return Response.error();})));});
