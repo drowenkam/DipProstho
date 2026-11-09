@@ -1,39 +1,20 @@
-# Volume I: Ten-Pass Editorial and Technical Review
+# Volume I — Critical Source/Text and Table Reconstruction: 10 QA Checks
 
-Date: 9 November 2026
-Basis: Edition 2 (105-page) integrated PDF, original clean Dip Pros source PDF, the latest self-contained SBA dashboard.
+**Scope:** Reader HTML and packaging. Original notebook first 55 PDF pages provide 52 substantive pages (pp. 4–55); 53 additional Edition 2 pages retain their own editable HTML material. This is a source-fidelity/technical review, **not** a new independent clinical guideline appraisal.
 
-This report records **10 distinct review checks**. It does **not** represent ten independent specialist clinical peer reviews or full medical guideline verification.
+| QA pass | Focus | Result and evidence |
+|---|---|---|
+| 1 | Source selection | Replaced corrupted OCR on all 52 substantive clean-source pages (original pp. 4–55), not automatic word guessing. |
+| 2 | Page coverage | All 105 Edition 2 source sections retained; 14 study chapters and introductory panel retained. |
+| 3 | Source tables | Checked 58 original table regions; complex transcriptions retain a faithful original visual source crop embedded in HTML, with no PDF click needed. |
+| 4 | Full table reconstruction | 70 readable HTML tables; reconstructed multi-page anatomy, oral-lesion, luting-cement and emergency tables, and four source numeric tables per appendix page. |
+| 5 | Cell labels | Mobile table cells are rendered as labelled cards; original source views remain available as a cross-check. |
+| 6 | Spelling / word spacing | Clean source text layer used for original prose; corrected 13 identifiable legacy keypoint tokenisation errors, including OVD/RVD, TMD, DOACs and drug names. |
+| 7 | Navigation / deep linking | 105 unique page anchors, no duplicate IDs or broken internal anchors; SBA question links remain in original format. |
+| 8 | Responsive browser | Chromium checks at widths 360, 390, 768 and 1280 px: no JavaScript exceptions or page-level horizontal overflow; six chapters opened per viewport. |
+| 9 | Live application logic | Search input, keypoint visibility and chapter navigation checked; the original 1,500-SBA dashboard starts in Chromium. |
+| 10 | Release integrity | Verified exactly 1,500 unique question IDs, all with five options and keys A–E; dashboard and scoring code byte-for-byte unchanged; both ZIPs and JS syntax verified. |
 
-| Pass | Review focus | Result |
-|---:|---|---|
-| 1 | Source and chapter structure | PASS |
-| 2 | Content visibility | PASS |
-| 3 | Physiology and pathology | PASS |
-| 4 | Physiology/pathology tables | PASS |
-| 5 | All table structures | PASS |
-| 6 | Spelling and PDF text-layer repairs | PASS |
-| 7 | Paragraphs and typography | PASS |
-| 8 | SBA and chapter links | PASS |
-| 9 | Browser interaction and responsive layout | PASS |
-| 10 | GitHub packaging and saved-progress safety | PASS |
+**Known limitation:** Some wide or visually intricate legacy source tables remain a horizontally scrollable, high-resolution **original-source image inline in the webpage**, rather than fully retyped cells. This is deliberate, to avoid incorrect transcription. Some supplemental Edition 2 content was not re-authored. Neither the historical clinical doses nor examination statements were independently validated; source-based emergency/prescribing tables are explicitly marked as historical and must be checked against current professional guidance. Native Safari on a physical iPhone/iPad and live GitHub deployment remain untested.
 
-## Supporting observations
-
-**1. Source and chapter structure:** 105 source sections mapped to the 105-page Edition 2 notebook; 14 unit panels retained.
-**2. Content visibility:** 28 collapsed full-note panels converted into displayed sections; source notes no longer require opening Keypoints.
-**3. Physiology and pathology:** All eight numbered teaching subsections, candidosis, oral mucosal differentials, and lesion assessment appear as visible web text.
-**4. Physiology/pathology tables:** Five-row tooth-wear table, five-row mucosal-lesion table and four Edition 2 clinical decision tables restored.
-**5. All table structures:** 74 HTML tables, including nine additional reconstructed comparison tables; valid headers, rows and labelled mobile cells.
-**6. Spelling and PDF text-layer repairs:** 1,664 source-aligned text replacements; inspected common broken-word patterns and retained British dental terminology.
-**7. Paragraphs and typography:** Paragraph spacing and wider line-height applied; 105 pages render as text rather than linked PDF or page images.
-**8. SBA and chapter links:** 706 direct SBA links, all refer to current question IDs, with no missing in-page anchor targets.
-**9. Browser interaction and responsive layout:** Chapter switching and pathology tables visible at 320, 390, 820 and 1280 px; search and keypoints present; dashboard starts.
-**10. GitHub packaging and saved-progress safety:** Minimal update is two website files plus instructions; cache version advanced; 1,500-question data and scoring JS byte-identical.
-
-## Limitations
-
-- The revised physiology/pathology paragraphs retain source teaching points but have been reflowed and, in selected passages, editorially summarised. Compare against the original PDF for a word-for-word reading.
-- Original borderless source tables were reconstructed where identifiable; not every historical visual diagram was recreated.
-- Browser tests used Chromium with in-memory HTML at four widths. Live GitHub Pages and native iPhone/iPad Safari could not be exercised in this environment.
-- Clinical guidance is educational and may be dated; do not treat the table conversion as specialist clinical approval.
+**GitHub install:** Extract the UPDATE ZIP. Upload `notes.html` and `sw.js` into your repository root (beside `index.html`) and commit. Uploading the ZIP itself does not deploy GitHub Pages. Refresh the deployed page online; if a stale reader remains, use `repair.html` to clear only cached web resources. The repair utility does not delete localStorage progress.
