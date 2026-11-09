@@ -1,5 +1,5 @@
 /* Independent offline shell — compatible with the self-contained SBA and HTML notes readers. */
-const CACHE_NAME = 'dip-pros-self-contained-startup-v22-20261109';
+const CACHE_NAME = 'dip-pros-notes-readability-reviewed-v23-20261109';
 const CORE = ['./','./index.html','./notes.html','./repair.html','./manifest.webmanifest','./assets/style.css','./assets/app.js'];
 self.addEventListener('install', e => e.waitUntil((async()=>{
   const cache=await caches.open(CACHE_NAME);
