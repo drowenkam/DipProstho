@@ -1,185 +1,50 @@
+/* Semantic HTML reader: 105 source notebook pages displayed as searchable web chapters. */
 (() => {
-  'use strict';
-  const meta = JSON.parse(document.getElementById('reader-data').textContent);
-  const pageTotal=meta.pageCount, toc=meta.toc;
-  const chapterData=JSON.parse(document.getElementById('chapter-map-data').textContent);
-  const chapters=chapterData.chapters;
-  const el=(id)=>document.getElementById(id);
-  const pageEl=el('page-image'), viewport=el('reader-viewport'), wrapper=el('image-container');
-  const chapter=el('chapter-name'), caption=el('page-caption'), pageInput=el('page-input');
-  const storagePrefix='dip-pros-final-notes-v1-';
-  // One-off migration from the original 72-page reader to Edition 2 (105 pages).
-  const oldPageToNew=[1,2,4,5,6,7,8,9,11,12,13,14,19,20,21,22,23,24,25,26,32,33,34,35,36,38,39,40,41,42,43,48,49,50,51,52,57,58,59,60,61,65,66,67,68,69,70,71,74,75,76,77,79,80,81,82,83,86,87,88,89,92,93,94,95,97,98,99,100,102,103,104];
-  try{
-    const marker=storagePrefix+'edition2-map-done';
-    if(localStorage.getItem(marker)!=='1'){
-      const translate=n=>Number.isInteger(n)&&n>=1&&n<=72?oldPageToNew[n-1]:n;
-      const prev=JSON.parse(localStorage.getItem(storagePrefix+'bookmarks')||'[]');
-      if(Array.isArray(prev)) localStorage.setItem(storagePrefix+'bookmarks',JSON.stringify([...new Set(prev.map(v=>translate(Number(v))).filter(v=>v>=1&&v<=105))]));
-      const oldLast=Number(localStorage.getItem(storagePrefix+'last'));
-      if(Number.isInteger(oldLast)&&oldLast>=1&&oldLast<=72)localStorage.setItem(storagePrefix+'last',String(translate(oldLast)));
-      localStorage.setItem(marker,'1');
-    }
-  }catch(e){ /* Reader is usable even if storage is unavailable. */ }
-  let saved=[];
-  try{saved=JSON.parse(localStorage.getItem(storagePrefix+'bookmarks'))||[];}catch(e){}
-  if(!Array.isArray(saved))saved=[];
-  saved=saved.map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=pageTotal);
-  // A return link is always present, even if browser history was replaced.
-  // The SBA app already saves the active session before navigating to notes.
-  const sourceQuestion=Number(new URLSearchParams(location.search).get('fromQuestion'));
-  if(Number.isInteger(sourceQuestion)&&sourceQuestion>=1&&sourceQuestion<=1500){
-    const back=el('reader-back-to-sba');
-    if(back){back.textContent=`← Resume SBA Q${sourceQuestion}`;back.title='Return to your saved SBA session';}
-  }
-  const rawPage=new URLSearchParams(location.search).get('page');
-  let lastSaved=1;try{lastSaved=Number(localStorage.getItem(storagePrefix+'last'))||1;}catch(e){}
-  let current=Number(rawPage)||lastSaved;
-  current=Math.max(1,Math.min(pageTotal,current));
-  let zoom=1;
-  // A single packed file replaces separate webp files (GitHub browser upload friendly).
-  let packedIndex=null, packedBytes=null;
-  const pageBlobs=new Map();
-  function pageURL(n){
-    if(!packedIndex || !packedBytes)return '';
-    if(pageBlobs.has(n))return pageBlobs.get(n);
-    const entry=packedIndex.offsets[n-1];
-    if(!entry)return '';
-    const chunk=new Uint8Array(packedBytes,entry[0],entry[1]);
-    const objectURL=URL.createObjectURL(new Blob([chunk],{type:'image/webp'}));
-    pageBlobs.set(n,objectURL);
-    return objectURL;
-  }
-  async function loadPackedPages(){
-    const status=el('offline-status');
-    try{
-      const [metaResponse,packResponse]=await Promise.all([
-        fetch('assets/notebook-pages-index.json'),
-        fetch('assets/notebook-pages.pack')
-      ]);
-      if(!metaResponse.ok || !packResponse.ok)throw new Error('Notebook page file unavailable');
-      const meta=await metaResponse.json();
-      const bytes=await packResponse.arrayBuffer();
-      if(meta.pages!==pageTotal || meta.offsets.length!==pageTotal)throw new Error('Invalid notebook page index');
-      const last=meta.offsets[pageTotal-1];
-      if(last[0]+last[1]!==bytes.byteLength)throw new Error('Notebook page bundle is incomplete');
-      packedIndex=meta;packedBytes=bytes;
-      update();
-      status.textContent='Notebook loaded · all '+pageTotal+' pages available.';
-    }catch(err){
-      status.textContent='Unable to load the notebook. Please refresh, confirm the two notebook-pages files were uploaded together, or read the separate PDF.';
-      pageEl.alt='Notebook page data could not load.';
-    }
-  }
-  const htmlEscape=(s)=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  const questionLink=(id,page)=>'index.html?question='+encodeURIComponent(id)+'&from='+page;
-  const practiceLink=(ids,page)=>'index.html?practice='+encodeURIComponent(ids.join(','))+'&from='+page;
-  function topicHTML(t){
-    const allIds=t.questions||[];
-    return `<div class="chapter-topic"><div class="chapter-topic-title">${htmlEscape(t.title)}</div><div class="chapter-topic-meta">Volume I p. ${t.page} · ${allIds.length} selected matching SBAs</div>
-    <div class="chapter-topic-actions"><a class="chapter-link" href="notes.html?page=${t.page}#notebook">Read these notes →</a>${allIds.length?`<a class="chapter-link primary" href="${practiceLink(allIds,t.page)}">Practise ${allIds.length} SBAs →</a>`:''}</div>
-    <div class="chapter-question-links" aria-label="Specific linked questions">${allIds.map(id=>`<a href="${questionLink(id,t.page)}" title="Open question ${id} in Volume II">Q${id}</a>`).join('')}</div></div>`;
-  }
-  const grid=el('chapter-grid');
-  grid.innerHTML=chapters.map(c=>`<details class="chapter-card" id="chapter-${c.unit}"><summary><span class="chapter-number">${String(c.unit).padStart(2,'0')}</span><span>${htmlEscape(c.title)}</span></summary><div class="chapter-card-content"><div class="chapter-card-actions"><a class="chapter-link primary" href="notes.html?page=${c.page}#notebook">Read Chapter ${c.unit} →</a><a class="chapter-link" href="notes.html?page=${106+c.unit}#notebook">Chapter study map (PDF p. ${106+c.unit}) →</a><a class="chapter-link" href="index.html?chapter=${c.unit}&from=${c.page}">All ${c.allQuestionCount} chapter SBAs →</a></div>${c.topics.map(topicHTML).join('')}</div></details>`).join('');
-  const chapterSelect=el('chapter-select');
-  chapterSelect.innerHTML='<option value="0">Choose chapter…</option>'+chapters.map(c=>`<option value="${c.unit}">${String(c.unit).padStart(2,'0')} · ${htmlEscape(c.title)}</option>`).join('');
-  chapterSelect.addEventListener('change',()=>{const c=chapters.find(x=>x.unit===Number(chapterSelect.value));if(c)goto(c.page);});
-  function currentChapter(){if(current>=107&&current<=120)return chapters[current-107];if(current===106)return chapters[0];let c=null;for(const ch of chapters){if(ch.page<=current)c=ch;else break;}return c||chapters[0];}
-  function renderChapterPanel(){
-    const c=currentChapter();
-    chapterSelect.value=String(c.unit);
-    el('chapter-previous').disabled=c.unit===1;
-    el('chapter-next').disabled=c.unit===chapters.length;
-    const panel=el('chapter-study-panel');
-    const related=c.topics.filter((t,i)=>t.page<=current || i===0);
-    const focused=(related.length?related.at(-1):c.topics[0]);
-    panel.innerHTML=`<h3>Chapter ${c.unit}: ${htmlEscape(c.title)}</h3><p>Currently showing p. ${current}. Use these links to go directly from these notes to their selected Volume II SBA questions.</p>
-      ${focused?topicHTML(focused):''}<a class="chapter-link primary" href="index.html?chapter=${c.unit}&from=${c.page}">Practice all ${c.allQuestionCount} chapter SBAs →</a><a class="chapter-link" href="notes.html?page=${106+c.unit}#notebook">Full chapter study map (p. ${106+c.unit}) →</a>
-      <a class="chapter-link" href="#chapter-${c.unit}" data-expand-chapter="${c.unit}">See all topics in this chapter ↑</a>`;
-  }
-  el('chapter-previous').addEventListener('click',()=>{const c=currentChapter();const target=chapters[c.unit-2];if(target)goto(target.page);});
-  el('chapter-next').addEventListener('click',()=>{const c=currentChapter();const target=chapters[c.unit];if(target)goto(target.page);});
-  el('chapter-study-panel').addEventListener('click',ev=>{const a=ev.target.closest('[data-expand-chapter]');if(a){const d=el('chapter-'+a.dataset.expandChapter);if(d)d.open=true;}});
-
-  const sectionName=(page)=>{let name='Introduction';for(const entry of toc){if(entry.page>page)break;if(entry.level===1)name=entry.title;}return name;};
-  const detailedName=(page)=>{let name='';for(const entry of toc){if(entry.page>page)break;name=entry.title;}return name;};
-  function setSize(){const full=Math.max(240,viewport.clientWidth-26);const base=Math.min(860,full);wrapper.style.width=(base*zoom)+'px';el('zoom-value').textContent=Math.round(zoom*100)+'%';}
-  function updateSaved(){
-    saved=[...new Set(saved)].sort((a,b)=>a-b);try{localStorage.setItem(storagePrefix+'bookmarks',JSON.stringify(saved));}catch(e){}
-    el('bookmark-btn').textContent=saved.includes(current)?'★ Saved page':'☆ Save page';
-    el('saved-pages').innerHTML=saved.length?saved.map(n=>`<button class="saved-page" type="button" data-saved-page="${n}">Page ${n}</button>`).join(''):'<span>No pages saved yet. Use “Save page” above.</span>';
-  }
-  function update(){
-    pageEl.src=pageURL(current);pageEl.alt=`Diploma in Prosthodontics final revision notebook, page ${current} of ${pageTotal}: ${detailedName(current)}`;
-    pageInput.value=current;chapter.textContent=sectionName(current);
-    caption.textContent=`Page ${current} of ${pageTotal} · ${detailedName(current)}`;
-    for(const id of ['prev-btn','prev-bottom'])el(id).disabled=current===1;
-    for(const id of ['next-btn','next-bottom'])el(id).disabled=current===pageTotal;
-    updateSaved();renderChapterPanel();setSize();viewport.scrollTo({left:0,top:0});
-    try{localStorage.setItem(storagePrefix+'last',String(current));}catch(e){}
-    try{history.replaceState(null,'','?page='+current+(Number.isInteger(sourceQuestion)&&sourceQuestion>=1&&sourceQuestion<=1500?'&fromQuestion='+sourceQuestion:'')+(location.hash||''));}catch(e){}
-    for(const ahead of [1,-1,2]){const n=current+ahead;if(n>=1&&n<=pageTotal){const preload=new Image();preload.src=pageURL(n);}}
-  }
-  function goto(n){if(!Number.isInteger(n)||n<1||n>pageTotal){pageInput.value=current;return;}current=n;update();}
-  // Clicking a chapter/keypoint/PDF-study-map page should never strand the reader,
-  // or unnecessarily reload the 7MB notebook pack.
-  document.addEventListener('click',ev=>{
-    const a=ev.target.closest('a[href]');if(!a)return;
-    const raw=a.getAttribute('href');
-    // Hash links such as #chapters must remain normal anchor navigation.
-    if(!raw || !raw.startsWith('notes.html?page='))return;
-    const u=new URL(a.href,location.href);
-    if(u.origin!==location.origin || u.pathname!==location.pathname || !u.searchParams.has('page'))return;
-    const page=Number(u.searchParams.get('page'));
-    if(!Number.isInteger(page)||page<1||page>pageTotal)return;
-    ev.preventDefault();goto(page);
-    if(u.hash){history.replaceState(null,'',`?page=${page}${Number.isInteger(sourceQuestion)&&sourceQuestion>=1&&sourceQuestion<=1500?'&fromQuestion='+sourceQuestion:''}${u.hash}`);}
-    el('reading-panel').scrollIntoView({behavior:'smooth',block:'start'});
-  });
-
-  function changeZoom(dir){zoom=Math.max(1,Math.min(3.5,Math.round((zoom+dir)*4)/4));setSize();}
-  el('prev-btn').onclick=el('prev-bottom').onclick=()=>goto(current-1);
-  el('next-btn').onclick=el('next-bottom').onclick=()=>goto(current+1);
-  el('go-btn').onclick=()=>goto(Number(pageInput.value));
-  pageInput.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();goto(Number(pageInput.value));}});
-  el('zoom-in').onclick=()=>changeZoom(.25);
-  el('zoom-out').onclick=()=>changeZoom(-.25);
-  el('zoom-reset').onclick=()=>{zoom=1;setSize();};
-  el('bookmark-btn').onclick=()=>{saved=saved.includes(current)?saved.filter(n=>n!==current):[...saved,current];updateSaved();};
-  el('saved-pages').addEventListener('click',ev=>{const btn=ev.target.closest('[data-saved-page]');if(btn){goto(Number(btn.dataset.savedPage));el('notebook').scrollIntoView({behavior:'smooth'});}});
-  const tocList=el('toc-list');
-  tocList.innerHTML=toc.map((entry,i)=>`<button class="toc-entry ${entry.level===1?'section':'subsection'}" type="button" data-toc-page="${entry.page}" aria-label="Go to page ${entry.page}: ${htmlEscape(entry.title)}"><span>${htmlEscape(entry.title)}</span><span class="toc-page">p. ${entry.page}</span></button>`).join('');
-  tocList.addEventListener('click',ev=>{const b=ev.target.closest('[data-toc-page]');if(b){goto(Number(b.dataset.tocPage));el('contents').open=false;el('notebook').scrollIntoView({behavior:'smooth'});}});
-  window.addEventListener('resize',setSize);
-  document.addEventListener('keydown',ev=>{
-    if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable)return;
-    if(ev.key==='ArrowRight'){ev.preventDefault();goto(current+1);}
-    if(ev.key==='ArrowLeft'){ev.preventDefault();goto(current-1);}
-  });
-  let x0=null,y0=null;
-  viewport.addEventListener('touchstart',e=>{if(e.touches.length===1 && zoom===1){x0=e.touches[0].clientX;y0=e.touches[0].clientY;}else{x0=null;}},{passive:true});
-  viewport.addEventListener('touchend',e=>{if(x0==null||e.changedTouches.length!==1)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.7)goto(current+(dx<0?1:-1));},{passive:true});
-  el('offline-btn').addEventListener('click',async()=>{
-    const status=el('offline-status'),btn=el('offline-btn');
-    if(!('caches' in window)){status.textContent='Offline download is not supported in this browser. Use the original PDF in Files instead.';return;}
-    btn.disabled=true;status.textContent='Saving pages…';
-    let completed=0,failed=0;
-    try{
-      const cache=await caches.open('dip-pros-notes-v4');
-      const files=['index.html','notes.html','assets/reader.css','assets/reader.js','assets/style.css','assets/app.js','assets/questions.json','assets/notebook-pages-index.json','assets/notebook-pages.pack'];
-      for(let i=0;i<files.length;i+=3){
-        await Promise.all(files.slice(i,i+3).map(async rel=>{
-          try{const url=new URL(rel,location.href);const res=await fetch(url,{cache:'reload'});if(!res.ok)throw Error('HTTP '+res.status);await cache.put(url,res.clone());completed++;}
-          catch(err){failed++;}
-        }));
-        status.textContent=`Saved ${completed} of ${files.length} resources${failed?' · '+failed+' failed':''}`;
-      }
-      status.textContent=failed===0?`All ${pageTotal} notebook pages and the question bank were saved to this device's browser cache. Offline availability still depends on Safari storage retention.`:`Saved ${completed} resources; ${failed} failed. Reconnect and retry, or save the PDF to Files.`;
-    }catch(err){status.textContent='Could not complete offline saving. Please use the PDF download for reliable offline access.';}
-    btn.disabled=false;
-  });
-  loadPackedPages();
-  if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
+'use strict';
+const $ = s => document.querySelector(s);
+const root = $('#chapter-body'), status = $('#reader-status'), grid = $('#chapter-grid');
+const storagePrefix = 'dip-pros-final-notes-v1-';
+const escapeHTML=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let catalog, pages, chapters, currentChapter=1, currentView='chapter', searchQuery='';
+const store={get(k){try{return localStorage.getItem(storagePrefix+k)}catch(e){return null}},set(k,v){try{localStorage.setItem(storagePrefix+k,v)}catch(e){}}};
+let saved=[];try{saved=JSON.parse(store.get('bookmarks')||'[]').filter(n=>Number(n)>=1&&Number(n)<=105).map(Number)}catch(e){}
+function hrefChapter(u,view='chapter',page=0){return `notes.html?chapter=${u}${view==='chapter'?'':`&view=${view}`}${page?`&page=${page}`:''}#notebook`;}
+function hrefQ(id,page){return `index.html?question=${id}&from=${page}`;}
+function practice(ids,page){return `index.html?practice=${ids.join(',')}&from=${page}`;}
+function forChapter(n){return chapters.find(c=>c.unit===n)||chapters[0];}
+function pageChapter(n){const found=pages.find(p=>p.page===n);return found?.chapter||1;}
+function topicLinks(t){return `<div class="web-topic"><h4>${escapeHTML(t.title)}</h4><div class="web-topic-actions"><a href="${hrefChapter(currentChapter,'chapter',t.page)}">Read section</a><a href="${practice(t.questions,t.page)}">Practise ${t.questions.length} SBAs</a></div><details><summary>Linked question numbers (${t.questions.length})</summary><div class="web-question-links">${t.questions.map(id=>`<a href="${hrefQ(id,t.page)}">Q${id}</a>`).join('')}</div></details></div>`;}
+function renderDirectory(){grid.innerHTML=chapters.map(c=>`<article class="web-chapter-card"><div class="web-chapter-card-top"><span class="web-unit">${String(c.unit).padStart(2,'0')}</span><h3>${escapeHTML(c.title)}</h3></div><p>${c.topics.length} topic groups · ${c.allQuestionCount} related SBAs</p><div class="web-chapter-actions"><a class="web-solid-link" href="${hrefChapter(c.unit)}">Read chapter</a><a href="${hrefChapter(c.unit,'keypoints')}">Keypoints</a></div><details><summary>Topics and related questions</summary>${c.topics.map(t=>`<div class="web-directory-topic"><a href="${hrefChapter(c.unit,'chapter',t.page)}">${escapeHTML(t.title)}</a><span>${t.questions.length} SBAs</span></div>`).join('')}</details></article>`).join('');}
+function setUrl(chapter,view,page=0){const u=new URL(location.href);u.search='';u.searchParams.set('chapter',String(chapter));if(view!=='chapter')u.searchParams.set('view',view);if(page)u.searchParams.set('page',String(page));history.replaceState(null,'',u.pathname+u.search+'#notebook');}
+function renderContent(focusPage=0){const c=forChapter(currentChapter),within=pages.filter(p=>p.chapter===currentChapter);const header=`<div class="web-chapter-title"><span class="web-unit">CHAPTER ${String(c.unit).padStart(2,'0')}</span><h2>${escapeHTML(c.title)}</h2><p>Volume I content · ${within.length} source pages · ${c.topics.length} revision topics</p></div>`;
+const topics=`<section class="web-related-topics"><h3>Topics and connected SBAs</h3>${c.topics.map(t=>`<div class="web-topic"><h4><a href="${hrefChapter(c.unit,'chapter',t.page)}">${escapeHTML(t.title)}</a></h4><div class="web-topic-actions"><a href="${practice(t.questions,t.page)}">Practise ${t.questions.length} matched SBAs →</a></div><div class="web-question-links">${t.questions.slice(0,14).map(id=>`<a href="${hrefQ(id,t.page)}">Q${id}</a>`).join('')}</div></div>`).join('')}<a class="reader-button reader-subtle web-all-sbas" href="index.html?chapter=${c.unit}&from=${c.page}">Practise all ${c.allQuestionCount} chapter SBAs →</a></section>`;
+const sections=within.map(p=>`<article class="web-notes-page" id="source-page-${p.page}"><div class="web-page-label"><span>VOLUME I · SOURCE PAGE ${p.page}</span><button class="save-page ${saved.includes(p.page)?'saved':''}" type="button" data-bookmark="${p.page}">${saved.includes(p.page)?'★ Saved':'☆ Save page'}</button></div><div class="web-source-content">${p.html}</div><div class="web-page-actions"><a href="#notebook">↑ Chapter top</a><a href="${hrefChapter(c.unit,'keypoints')}">Keypoints</a><a href="index.html">SBA dashboard</a></div></article>`).join('');
+root.innerHTML=header+topics+sections+`<div class="web-end-actions"><a href="#chapters">← All chapters</a><a href="index.html">← Back to SBA questions</a></div>`;
+status.textContent=`Chapter ${currentChapter} loaded as HTML text · ${within.length} source pages`;
+if(focusPage){const el=document.getElementById('source-page-'+focusPage);if(el)requestAnimationFrame(()=>el.scrollIntoView({block:'start'}));}
+}
+function renderKeypoints(){const c=forChapter(currentChapter),within=pages.filter(p=>p.chapter===currentChapter);let count=0;
+const cards=within.flatMap(p=>p.keypoints.map(k=>({page:p.page,title:p.title,value:k}))).filter(v=>v.value.trim().length>15).map(k=>{count++;return `<article class="web-keypoint"><div class="web-kicker">SOURCE PAGE ${k.page}</div><h3>${escapeHTML(k.title)}</h3><p>${escapeHTML(k.value)}</p><div class="web-topic-actions"><a href="${hrefChapter(currentChapter,'chapter',k.page)}">Read the full explanation →</a></div></article>`;}).join('');
+root.innerHTML=`<div class="web-chapter-title"><span class="web-unit">CHAPTER ${currentChapter}</span><h2>Keypoints · ${escapeHTML(c.title)}</h2><p>Extracted from the original chapter's “In one minute,” clinical principles, and clinical discriminators. Use the full notes for qualifying detail and limitations.</p></div><div class="web-keypoint-grid">${cards||'<p>No summary labels found in the source chapter. Read the complete notes instead.</p>'}</div><div class="web-end-actions"><a href="${hrefChapter(currentChapter)}">← Read complete chapter</a><a href="index.html">← SBA dashboard</a></div>`;
+status.textContent=`${count} source-derived keypoints shown for Chapter ${currentChapter}`;
+}
+function renderSearch(){root.innerHTML=`<div class="web-chapter-title"><h2>Search the complete Volume I</h2><p>Search the source text across all 105 pages. Results open the relevant chapter and source section.</p></div><label class="web-search-label" for="notes-search">Search notes</label><input type="search" id="notes-search" placeholder="e.g. altered cast, PMMA, ferrule, mucositis" value="${escapeHTML(searchQuery)}" autocomplete="off"><div id="notes-results" class="web-search-results"></div>`;searchResults();status.textContent='Search all 105 pages without opening a PDF.';}
+function searchResults(){const dest=$('#notes-results');if(!dest)return;const words=searchQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);if(!words.length){dest.innerHTML='<p class="web-hint">Type a clinical topic or term to see matching notebook sections.</p>';return;}
+const matches=pages.filter(p=>words.every(w=>p.text.toLocaleLowerCase().includes(w))).slice(0,60);
+dest.innerHTML=`<p class="web-hint">${matches.length} matching source section${matches.length===1?'':'s'}${matches.length===60?' (first 60 shown)':''}</p>`+matches.map(p=>{const idx=p.text.toLocaleLowerCase().indexOf(words[0]);const excerpt=p.text.substring(Math.max(0,idx-70),Math.min(p.text.length,idx+210));return `<a class="web-search-hit" href="${hrefChapter(p.chapter||1,'chapter',p.page)}"><strong>Chapter ${p.chapter||'Intro'} · Page ${p.page}: ${escapeHTML(p.title)}</strong><span>${escapeHTML(excerpt)}</span></a>`;}).join('');}
+function render(focus=0){$('#chapter-choice').value=String(currentChapter);$('#previous-chapter').disabled=currentChapter<=1;$('#next-chapter').disabled=currentChapter>=chapters.length;
+document.querySelectorAll('[data-view]').forEach(b=>{const sel=b.dataset.view===currentView;b.classList.toggle('selected',sel);b.setAttribute('aria-pressed',String(sel));});
+if(currentView==='search')renderSearch();else if(currentView==='keypoints')renderKeypoints();else renderContent(focus);
+store.set('last',String(focus||forChapter(currentChapter).page));setUrl(currentChapter,currentView,focus);}
+function go(c,v='chapter',page=0){currentChapter=Math.max(1,Math.min(14,Number(c)||1));currentView=['chapter','keypoints','search'].includes(v)?v:'chapter';render(page);if(!page)$('#notebook').scrollIntoView({block:'start'});}
+$('#chapter-choice').addEventListener('change',e=>go(Number(e.target.value),currentView));$('#previous-chapter').addEventListener('click',()=>go(currentChapter-1,currentView));$('#next-chapter').addEventListener('click',()=>go(currentChapter+1,currentView));
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>go(currentChapter,b.dataset.view)));
+root.addEventListener('click',e=>{const btn=e.target.closest('[data-bookmark]');if(!btn)return;const n=Number(btn.dataset.bookmark);saved=saved.includes(n)?saved.filter(v=>v!==n):[...saved,n].sort((a,b)=>a-b);store.set('bookmarks',JSON.stringify(saved));btn.textContent=saved.includes(n)?'★ Saved':'☆ Save page';btn.classList.toggle('saved',saved.includes(n));});
+root.addEventListener('input',e=>{if(e.target.id==='notes-search'){searchQuery=e.target.value;searchResults();}});
+window.addEventListener('popstate',()=>{readLocation();render();});
+function readLocation(){const p=new URLSearchParams(location.search);let req=Number(p.get('page'))||0;let legacyChapter=0;if(req>=107&&req<=120){legacyChapter=req-106;req=0;}else if(req===106){legacyChapter=1;req=0;}else if(req>105)req=0;currentChapter=Number(p.get('chapter'))||legacyChapter||(req?pageChapter(req):pageChapter(Number(store.get('last'))||5));currentChapter=Math.max(1,Math.min(14,currentChapter));currentView=p.get('view')||'chapter';return req;}
+Promise.all([fetch('assets/chapter-map.json').then(r=>{if(!r.ok)throw Error('Chapter map missing');return r.json()}),fetch('assets/notes-content.json').then(r=>{if(!r.ok)throw Error('HTML content file missing');return r.json()})]).then(([c,d])=>{
+chapters=c.chapters;catalog=d;pages=d.pages;if(pages.length!==105)throw Error('Incomplete chapter content');$('#chapter-choice').innerHTML=chapters.map(ch=>`<option value="${ch.unit}">${String(ch.unit).padStart(2,'0')} · ${escapeHTML(ch.title)}</option>`).join('');renderDirectory();const focus=readLocation();render(focus);
+}).catch(err=>{status.textContent='Unable to read the HTML chapter content: '+err.message+'. Upload assets/notes-content.json and assets/chapter-map.json to GitHub.';root.innerHTML='<a href="index.html">← Return to SBA dashboard</a>';});
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
 })();
